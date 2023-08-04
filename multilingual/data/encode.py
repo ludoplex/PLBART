@@ -46,17 +46,14 @@ class MultiprocessingEncoder(object):
 
 def process(args):
     data = []
-    with open(args.input_source, 'r', encoding='utf-8') as f1, \
-            open(args.input_target, 'r', encoding='utf-8') as f2:
-        for src, tgt in zip(f1, f2):
-            data.append([src, tgt])
-
+    with (open(args.input_source, 'r', encoding='utf-8') as f1, open(args.input_target, 'r', encoding='utf-8') as f2):
+        data.extend([src, tgt] for src, tgt in zip(f1, f2))
     encoder = MultiprocessingEncoder(args)
     pool = Pool(args.workers, initializer=encoder.initializer)
 
     processed_dataset = []
     with tqdm(total=len(data), desc='Processing') as pbar:
-        for i, ex in enumerate(pool.imap(encoder.encode, data, 100)):
+        for ex in pool.imap(encoder.encode, data, 100):
             pbar.update()
             processed_dataset.append(ex)
 
@@ -71,7 +68,7 @@ def process(args):
                 filtered += 1
 
     if filtered > 0:
-        print("filtered {} lines".format(filtered), file=sys.stderr)
+        print(f"filtered {filtered} lines", file=sys.stderr)
 
 
 def main():

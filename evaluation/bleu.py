@@ -82,12 +82,11 @@ def compute_bleu(reference_corpus, translation_corpus, max_order=4,
         if smooth:
             precisions[i] = ((matches_by_order[i] + 1.) /
                              (possible_matches_by_order[i] + 1.))
+        elif possible_matches_by_order[i] > 0:
+            precisions[i] = (float(matches_by_order[i]) /
+                             possible_matches_by_order[i])
         else:
-            if possible_matches_by_order[i] > 0:
-                precisions[i] = (float(matches_by_order[i]) /
-                                 possible_matches_by_order[i])
-            else:
-                precisions[i] = 0.0
+            precisions[i] = 0.0
 
     if min(precisions) > 0:
         p_log_sum = sum((1. / max_order) * math.log(p) for p in precisions)
@@ -97,11 +96,7 @@ def compute_bleu(reference_corpus, translation_corpus, max_order=4,
 
     ratio = float(translation_length) / reference_length
 
-    if ratio > 1.0:
-        bp = 1.
-    else:
-        bp = math.exp(1 - 1. / ratio)
-
+    bp = 1. if ratio > 1.0 else math.exp(1 - 1. / ratio)
     bleu = geo_mean * bp
 
     return (bleu, precisions, bp, ratio, translation_length, reference_length)
@@ -117,15 +112,11 @@ def _bleu(ref_file, trans_file, subword_option=None):
             reference_text.append(fh.readlines())
     per_segment_references = []
     for references in zip(*reference_text):
-        reference_list = []
-        for reference in references:
-            reference_list.append(reference.strip().split())
+        reference_list = [reference.strip().split() for reference in references]
         per_segment_references.append(reference_list)
     translations = []
     with open(trans_file) as fh:
-        for line in fh:
-            translations.append(line.strip().split())
-
+        translations.extend(line.strip().split() for line in fh)
     bleu_score, _, _, _, _, _ = compute_bleu(per_segment_references, translations, max_order, smooth)
     return round(100 * bleu_score, 2)
 

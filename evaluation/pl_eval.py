@@ -28,8 +28,6 @@ def main():
     refs = [x.strip() for x in open(args.references, 'r', encoding='utf-8').readlines()]
     preds = [x.strip() for x in open(args.predictions, 'r', encoding='utf-8').readlines()]
 
-    assert len(refs) == len(refs)
-
     total = len(refs)
     EM = 0.0
 

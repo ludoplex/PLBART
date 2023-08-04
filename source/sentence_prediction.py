@@ -165,7 +165,7 @@ class BARTSentencePredictionTask(LegacyFairseqTask):
         ##
         langs = args.langs.split(",")
         for l in langs:
-            dictionary.add_symbol("[{}]".format(l))
+            dictionary.add_symbol(f"[{l}]")
         dictionary.add_symbol("<mask>")
         return dictionary
 
@@ -179,7 +179,7 @@ class BARTSentencePredictionTask(LegacyFairseqTask):
             os.path.join(args.data, "input0", "dict.txt"),
             source=True,
         )
-        logger.info("[input] dictionary: {} types".format(len(data_dict)))
+        logger.info(f"[input] dictionary: {len(data_dict)} types")
 
         label_dict = None
         if not args.regression_target:
@@ -189,7 +189,7 @@ class BARTSentencePredictionTask(LegacyFairseqTask):
                 os.path.join(args.data, "label", "dict.txt"),
                 source=False,
             )
-            logger.info("[label] dictionary: {} types".format(len(label_dict)))
+            logger.info(f"[label] dictionary: {len(label_dict)} types")
         else:
             label_dict = data_dict
         return cls(args, data_dict, label_dict)

@@ -37,12 +37,16 @@ class Language:
         if executor is None:
             executor = LocalExecutor()
         suffix = '.with_comments' if keep_comments else ''
-        assert len(list(self.folder.glob('*.json.gz'))
-                   ) > 0, f"there is no json in {str(self.folder)}"
-        jsons = [json for json in self.folder.glob(
-            '*.json.gz') if not Path(str(json).replace('.json.gz', suffix + '.tok')).is_file()]
+        assert list(
+            self.folder.glob('*.json.gz')
+        ), f"there is no json in {str(self.folder)}"
+        jsons = [
+            json
+            for json in self.folder.glob('*.json.gz')
+            if not Path(str(json).replace('.json.gz', f'{suffix}.tok')).is_file()
+        ]
         print(f"{self.l}: tokenizing {len(jsons)} json files ...")
-        if len(jsons) > 0:
+        if jsons:
             jobs = executor.map_array(process_and_tokenize_json_file, jsons, itertools.repeat(
                 self.l), itertools.repeat(keep_comments))
             for job in jobs:
@@ -90,10 +94,8 @@ class Language:
                 self.folder.joinpath(f'test{suffix}.tok').is_file() and
                 self.folder.joinpath(f'valid{suffix}.tok').is_file()):
             print(f"{self.l}: train, test and valid for already exist. ")
-            nlines = 8 * \
-                     get_nlines(self.folder.joinpath(f'train{suffix}.{0}.tok'))
-            size_gb = 8 * \
-                      self.folder.joinpath(f'train{suffix}.{0}.tok').stat().st_size
+            nlines = (8 * get_nlines(self.folder.joinpath(f'train{suffix}.0.tok')))
+            size_gb = (8 * self.folder.joinpath(f'train{suffix}.0.tok').stat().st_size)
         else:
             print(f"{self.l}: split train, test and valid ... ")
             if split_executor is None:
@@ -112,9 +114,14 @@ class Language:
         files = list(self.folder.glob(f'train{suffix}.[01234567].tok'))
         files.append(self.folder.joinpath(f'test{suffix}.tok'))
         files.append(self.folder.joinpath(f'valid{suffix}.tok'))
-        toks = [tok for tok in files if not (tok.with_suffix('.functions_standalone.tok').is_file(
-        ) and tok.with_suffix('.functions_class.tok').is_file())]
-        if len(toks) > 0:
+        if toks := [
+            tok
+            for tok in files
+            if not (
+                tok.with_suffix('.functions_standalone.tok').is_file()
+                and tok.with_suffix('.functions_class.tok').is_file()
+            )
+        ]:
             jobs = executor.map_array(
                 extract_functions_file, toks, itertools.repeat(self.l))
             for job in jobs:
@@ -135,9 +142,14 @@ class Language:
             f'valid{suffix}.functions_class.tok'))
         files.append(self.folder.joinpath(
             f'valid{suffix}.functions_standalone.tok'))
-        toks = [tok for tok in files if not (tok.with_suffix(
-            '.DS-f.ds.tok').is_file() and tok.with_suffix('.DS-f.f.tok').is_file())]
-        if len(toks) > 0:
+        if toks := [
+            tok
+            for tok in files
+            if not (
+                tok.with_suffix('.DS-f.ds.tok').is_file()
+                and tok.with_suffix('.DS-f.f.tok').is_file()
+            )
+        ]:
             jobs = executor.map_array(
                 extract_docstrings, toks, itertools.repeat(self.l))
             for job in jobs:
@@ -160,9 +172,8 @@ class Dataset:
             langs.append(lang3)
 
         langs = sorted(langs)
-        self.langs = []
+        self.langs = [Language(root, langs[0])]
 
-        self.langs.append(Language(root, langs[0]))
         if len(langs) >= 2:
             self.langs.append(Language(root, langs[1]))
         if len(langs) == 3:
@@ -263,7 +274,7 @@ class Dataset:
         jobs = []
         for l in self.langs:
             for f in self.folder.glob(f'{l.l}.{files_regex}'):
-                if not Path(str(f) + '.pth').is_file():
+                if not Path(f'{str(f)}.pth').is_file():
                     print(f"binarizing {f} ...")
                     jobs.append(executor.submit(
                         binarize_for_XLM_file, f, self.vocab))

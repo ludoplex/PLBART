@@ -56,7 +56,7 @@ def normalize(s):
         s = re.sub(pattern, replace, s)
     s = xml.sax.saxutils.unescape(s, {'&quot;': '"'})
     # language-dependent part (assuming Western languages):
-    s = " %s " % s
+    s = f" {s} "
     if not preserve_case:
         s = s.lower()  # this might not be identical to the original
     for (pattern, replace) in normalize2:
@@ -92,14 +92,10 @@ def cook_test(test, item, n=4):
     encapsulates everything that BLEU needs to know about it.'''
     (reflens, refmaxcounts) = item
     test = normalize(test)
-    result = {}
-    result["testlen"] = len(test)
-
+    result = {"testlen": len(test)}
     # Calculate effective reference sentence length.
 
-    if eff_ref_len == "shortest":
-        result["reflen"] = min(reflens)
-    elif eff_ref_len == "average":
+    if eff_ref_len == "average":
         result["reflen"] = float(sum(reflens)) / len(reflens)
     elif eff_ref_len == "closest":
         min_diff = None
@@ -108,6 +104,8 @@ def cook_test(test, item, n=4):
                 min_diff = abs(reflen - len(test))
                 result['reflen'] = reflen
 
+    elif eff_ref_len == "shortest":
+        result["reflen"] = min(reflens)
     result["guess"] = [max(len(test) - k + 1, 0) for k in range(1, n + 1)]
 
     result['correct'] = [0] * n
@@ -163,23 +161,22 @@ def splitPuncts(line):
 def computeMaps(prediction_file, goldfile, is_goldfile_json):
     predictionMap = {}
     goldMap = {}
-    predictions = open(prediction_file, 'r', encoding='utf-8')
-    gf = open(goldfile, 'r', encoding='utf-8')
+    with open(prediction_file, 'r', encoding='utf-8') as predictions:
+        gf = open(goldfile, 'r', encoding='utf-8')
 
-    for rid, row in enumerate(predictions):
-        pred = row.strip()
-        predictionMap[rid] = [splitPuncts(pred.strip().lower())]
+        for rid, row in enumerate(predictions):
+            pred = row.strip()
+            predictionMap[rid] = [splitPuncts(pred.strip().lower())]
 
-    for rid, row in enumerate(gf):
-        # (rid, pred) = row.split('\t')
-        if rid in predictionMap:  # Only insert if the id exists for the method
-            if rid not in goldMap:
-                goldMap[rid] = []
-            if is_goldfile_json:
-                row = ' '.join(json.loads(row.strip())['docstring_tokens'])
-            goldMap[rid].append(splitPuncts(row.strip().lower()))
+        for rid, row in enumerate(gf):
+            # (rid, pred) = row.split('\t')
+            if rid in predictionMap:  # Only insert if the id exists for the method
+                if rid not in goldMap:
+                    goldMap[rid] = []
+                if is_goldfile_json:
+                    row = ' '.join(json.loads(row.strip())['docstring_tokens'])
+                goldMap[rid].append(splitPuncts(row.strip().lower()))
 
-    predictions.close()
     gf.close()
     # sys.stderr.write('Total: ' + str(len(goldMap)) + '\n')
     return (goldMap, predictionMap)

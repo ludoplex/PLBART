@@ -72,12 +72,12 @@ def main():
                 for enc_line, output_h in zip(enc_lines, outputs):
                     print(enc_line, file=output_h)
             else:
-                stats["num_filtered_" + filt] += 1
+                stats[f"num_filtered_{filt}"] += 1
             if i % 10000 == 0:
-                print("processed {} lines".format(i), file=sys.stderr)
+                print(f"processed {i} lines", file=sys.stderr)
 
         for k, v in stats.most_common():
-            print("[{}] filtered {} lines".format(k, v), file=sys.stderr)
+            print(f"[{k}] filtered {v} lines", file=sys.stderr)
 
 
 class MultiprocessingEncoder(object):

@@ -51,27 +51,26 @@ def process(
 ):
     index = set()
     with open(index_file) as f:
-        for idx, line in enumerate(f):
+        for line in f:
             line = line.strip()
             index.add(int(line))
 
     js_all = json.load(open(srcfile))
-    data = []
-    for idx, js in enumerate(js_all):
-        if idx in index:
-            data.append((js['func'], js['target']))
-
+    data = [
+        (js['func'], js['target'])
+        for idx, js in enumerate(js_all)
+        if idx in index
+    ]
     encoder = MultiprocessingEncoder(spmfile, max_length)
     pool = Pool(workers, initializer=encoder.initializer)
 
     processed_dataset = []
     with tqdm(total=len(data), desc='Processing') as pbar:
-        for i, ex in enumerate(pool.imap(encoder.encode, data, 100)):
+        for ex in pool.imap(encoder.encode, data, 100):
             pbar.update()
             processed_dataset.append(ex)
 
-    with open(os.path.join(outdir, '{}.input0'.format(split)), 'w', encoding='utf-8') as fw1, \
-            open(os.path.join(outdir, '{}.label'.format(split)), 'w', encoding='utf-8') as fw2:
+    with (open(os.path.join(outdir, f'{split}.input0'), 'w', encoding='utf-8') as fw1, open(os.path.join(outdir, f'{split}.label'), 'w', encoding='utf-8') as fw2):
         for idx, ex in enumerate(processed_dataset):
             if nexample != -1 and idx >= nexample:
                 break

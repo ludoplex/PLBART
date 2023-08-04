@@ -141,19 +141,14 @@ def tokenize_python(code, keep_comments=False, process_strings=True):
     while True:
         try:
             toktype, tok, _, _, line = next(iterator)
-        except (
-                tokenize.TokenError,
-                IndentationError,
-                SyntaxError,
-                UnicodeDecodeError,
-        ) as e:
+        except (tokenize.TokenError, SyntaxError, UnicodeDecodeError) as e:
             raise ValueError(
                 f'Impossible to parse tokens because of incorrect source code "{e}" ...'
             )
         except StopIteration:
-            raise Exception(f"End of iterator before ENDMARKER token.")
+            raise Exception("End of iterator before ENDMARKER token.")
 
-        if toktype == tokenize.ENCODING or toktype == tokenize.NL:
+        if toktype in [tokenize.ENCODING, tokenize.NL]:
             continue
 
         elif toktype == tokenize.NEWLINE:
@@ -163,19 +158,18 @@ def tokenize_python(code, keep_comments=False, process_strings=True):
             tokens.append("NEW_LINE")
 
         elif toktype == tokenize.COMMENT:
-            if keep_comments:
-                com = process_string(
-                    tok,
-                    PYTHON_CHAR2TOKEN,
-                    PYTHON_TOKEN2CHAR,
-                    True,
-                    do_whole_processing=process_strings,
-                )
-                if len(com) > 0:
-                    tokens.append(com)
-            else:
+            if not keep_comments:
                 continue
 
+            com = process_string(
+                tok,
+                PYTHON_CHAR2TOKEN,
+                PYTHON_TOKEN2CHAR,
+                True,
+                do_whole_processing=process_strings,
+            )
+            if len(com) > 0:
+                tokens.append(com)
         elif toktype == tokenize.STRING:
             if tok == line.strip():  # docstring
                 if not keep_comments:
@@ -228,7 +222,7 @@ def tokenize_python(code, keep_comments=False, process_strings=True):
 def detokenize_code(code):
     # replace recreate lines with \n and appropriate indent / dedent
     # removing indent/ dedent tokens
-    assert isinstance(code, str) or isinstance(code, list)
+    assert isinstance(code, (str, list))
     if isinstance(code, list):
         code = " ".join(code)
     code = code.replace("ENDCOM", "NEW_LINE")
@@ -257,7 +251,7 @@ def detokenize_code(code):
         for toktype, tok, _, _, line in tokenize.tokenize(
                 BytesIO(untok_s.encode("utf-8")).readline
         ):
-            if toktype == tokenize.STRING or toktype == tokenize.COMMENT:
+            if toktype in [tokenize.STRING, tokenize.COMMENT]:
                 tok_ = (
                     tok.replace("STRNEWLINE", "\n")
                         .replace("TABSYMBOL", "\t")
@@ -291,21 +285,26 @@ def extract_functions_python_with_docstring(function):
     ds = re.findall(
         "[:][ ][N][E][W][_][L][I][N][E][ ][I][N][D][E][N][T][ ]['][']['].*?['][']['][ ][N][E][W][_][L][I][N][E]|[:][ ][N][E][W][_][L][I][N][E][ ][I][N][D][E][N][T][ ][\"][\"][\"].*?[\"][\"][\"][ ][N][E][W][_][L][I][N][E]",
         function, re.DOTALL)
-    if len(ds) > 0:
-        for d in ds:
-            function = function.replace(d[18:-9], '')
-        coms = ' '.join([d[18:-9] for d in ds])
-        inline_coms = re.findall('[#].*?[E][N][D][C][O][M]', function)
-        for inline_com in inline_coms:
-            function = function.replace(inline_com, '')
-            coms += ' <INLINE> '
-            coms += inline_com
-        if len(re.sub(r'\W', '', coms.replace('<INLINE>', '').replace('ENDCOM', ''))) < 5:
-            return '', ''
-        else:
-            return re.sub('\s+', ' ', function), coms
-    else:
+    if len(ds) <= 0:
         return '', ''
+    for d in ds:
+        function = function.replace(d[18:-9], '')
+    coms = ' '.join([d[18:-9] for d in ds])
+    inline_coms = re.findall('[#].*?[E][N][D][C][O][M]', function)
+    for inline_com in inline_coms:
+        function = function.replace(inline_com, '')
+        coms += ' <INLINE> '
+        coms += inline_com
+    return (
+        ('', '')
+        if len(
+            re.sub(
+                r'\W', '', coms.replace('<INLINE>', '').replace('ENDCOM', '')
+            )
+        )
+        < 5
+        else (re.sub('\s+', ' ', function), coms)
+    )
 
 
 def extract_functions_python(s):
@@ -321,7 +320,7 @@ def extract_functions_python(s):
         try:
             if token == 'def':
                 function = ['def']
-                while not (token == 'DEDENT' and number_indent == 0):
+                while token != 'DEDENT' or number_indent != 0:
                     token = next(tokens)
                     if token == 'INDENT':
                         number_indent += 1
@@ -365,7 +364,7 @@ def filter_functions_python_2_3(function):
 
 
 def get_function_name_python(s):
-    assert isinstance(s, str) or isinstance(s, list)
+    assert isinstance(s, (str, list))
     if isinstance(s, str):
         s = s.split()
     return s[s.index('def') + 1]
@@ -407,12 +406,11 @@ def indent_lines(lines):
         else:
             line = prefix + line
         lines[i] = line
-    untok_s = '\n'.join(lines)
-    return untok_s
+    return '\n'.join(lines)
 
 
 def detokenize_java(s):
-    assert isinstance(s, str) or isinstance(s, list)
+    assert isinstance(s, (str, list))
     if isinstance(s, list):
         s = ' '.join(s)
     s = s.replace('ENDCOM', 'NEW_LINE')
@@ -438,7 +436,7 @@ def detokenize_java(s):
         # call parser of the tokenizer to find comments and string and detokenize them correctly
         tokens_generator = javalang_tok.tokenize(untok_s, keep_comments=True)
         for token in tokens_generator:
-            if isinstance(token, javalang_tok.String) or isinstance(token, javalang_tok.Comment):
+            if isinstance(token, (javalang_tok.String, javalang_tok.Comment)):
                 token_ = token.value.replace('STRNEWLINE', '\n').replace('TABSYMBOL', '\t').replace(' ', '').replace(
                     'SPACETOKEN', ' ')
                 untok_s = untok_s.replace(token.value, token_)
@@ -498,7 +496,7 @@ def extract_functions_java(s):
                     function.append(token)
                 if token == '{':
                     number_indent = 1
-                    while not (token == '}' and number_indent == 0):
+                    while token != '}' or number_indent != 0:
                         try:
                             i.next()
                             token = tokens[i.i]
@@ -509,7 +507,7 @@ def extract_functions_java(s):
                             function.append(token)
                         except StopIteration:
                             break
-                    if 'static' in function[0:function.index('{')]:
+                    if 'static' in function[: function.index('{')]:
                         functions_standalone.append(
                             remove_java_annotation(' '.join(function)))
                     else:
@@ -526,21 +524,26 @@ def extract_functions_java(s):
 
 def extract_functions_java_with_docstring(function):
     ds = re.findall('[/][*].*?[*][/][ ]', function, re.DOTALL)
-    if len(ds) > 0:
-        for d in ds:
-            function = function.replace(d, '')
-        coms = ' '.join([d[:-1] for d in ds])
-        inline_coms = re.findall('[/][/].*?[E][N][D][C][O][M]', function)
-        for inline_com in inline_coms:
-            function = function.replace(inline_com, '')
-            coms += ' <INLINE> '
-            coms += inline_com
-        if len(re.sub(r'\W', '', coms.replace('<INLINE>', '').replace('ENDCOM', ''))) < 5:
-            return '', ''
-        else:
-            return re.sub('\s+', ' ', function), coms
-    else:
+    if len(ds) <= 0:
         return '', ''
+    for d in ds:
+        function = function.replace(d, '')
+    coms = ' '.join([d[:-1] for d in ds])
+    inline_coms = re.findall('[/][/].*?[E][N][D][C][O][M]', function)
+    for inline_com in inline_coms:
+        function = function.replace(inline_com, '')
+        coms += ' <INLINE> '
+        coms += inline_com
+    return (
+        ('', '')
+        if len(
+            re.sub(
+                r'\W', '', coms.replace('<INLINE>', '').replace('ENDCOM', '')
+            )
+        )
+        < 5
+        else (re.sub('\s+', ' ', function), coms)
+    )
 
 
 def remove_java_annotation(function):
@@ -548,7 +551,7 @@ def remove_java_annotation(function):
 
 
 def get_first_token_before_first_parenthesis(s):
-    assert isinstance(s, str) or isinstance(s, list)
+    assert isinstance(s, (str, list))
     if isinstance(s, str):
         s = s.split()
     return s[s.index('(') - 1]
@@ -578,7 +581,7 @@ def extract_arguments_java_using_parentheses(f):
         if par == 0:
             break
     arguments = ' '.join(arguments[1:-1])
-    if arguments == '':
+    if not arguments:
         return ['None'], ['None']
     arguments = arguments.split(',')
     for arg in arguments:

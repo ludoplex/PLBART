@@ -15,7 +15,6 @@ def DFG_python(root_node, index_to_code, states):
     if_statement = ['if_statement']
     for_statement = ['for_statement']
     while_statement = ['while_statement']
-    do_first_statement = ['for_in_clause']
     def_statement = ['default_parameter']
     states = states.copy()
     if (len(root_node.children) == 0 or root_node.type == 'string') and root_node.type != 'comment':
@@ -38,7 +37,6 @@ def DFG_python(root_node, index_to_code, states):
                 idx, code = index_to_code[index]
                 DFG.append((code, idx, 'comesFrom', [], []))
                 states[code] = [idx]
-            return sorted(DFG, key=lambda x: x[1]), states
         else:
             name_indexs = tree_to_variable_index(name, index_to_code)
             value_indexs = tree_to_variable_index(value, index_to_code)
@@ -50,7 +48,7 @@ def DFG_python(root_node, index_to_code, states):
                     idx2, code2 = index_to_code[index2]
                     DFG.append((code1, idx1, 'comesFrom', [code2], [idx2]))
                 states[code1] = [idx1]
-            return sorted(DFG, key=lambda x: x[1]), states
+        return sorted(DFG, key=lambda x: x[1]), states
     elif root_node.type in assignment:
         if root_node.type == 'for_in_clause':
             right_nodes = [root_node.children[-1]]
@@ -63,9 +61,9 @@ def DFG_python(root_node, index_to_code, states):
             if len(right_nodes) != len(left_nodes):
                 left_nodes = [root_node.child_by_field_name('left')]
                 right_nodes = [root_node.child_by_field_name('right')]
-            if len(left_nodes) == 0:
+            if not left_nodes:
                 left_nodes = [root_node.child_by_field_name('left')]
-            if len(right_nodes) == 0:
+            if not right_nodes:
                 right_nodes = [root_node.child_by_field_name('right')]
         DFG = []
         for node in right_nodes:
@@ -115,15 +113,15 @@ def DFG_python(root_node, index_to_code, states):
         return sorted(DFG, key=lambda x: x[1]), new_states
     elif root_node.type in for_statement:
         DFG = []
-        for i in range(2):
+        for _ in range(2):
             right_nodes = [x for x in root_node.child_by_field_name('right').children if x.type != ',']
             left_nodes = [x for x in root_node.child_by_field_name('left').children if x.type != ',']
             if len(right_nodes) != len(left_nodes):
                 left_nodes = [root_node.child_by_field_name('left')]
                 right_nodes = [root_node.child_by_field_name('right')]
-            if len(left_nodes) == 0:
+            if not left_nodes:
                 left_nodes = [root_node.child_by_field_name('left')]
-            if len(right_nodes) == 0:
+            if not right_nodes:
                 right_nodes = [root_node.child_by_field_name('right')]
             for node in right_nodes:
                 temp, states = DFG_python(node, index_to_code, states)
@@ -152,7 +150,7 @@ def DFG_python(root_node, index_to_code, states):
         return sorted(DFG, key=lambda x: x[1]), states
     elif root_node.type in while_statement:
         DFG = []
-        for i in range(2):
+        for _ in range(2):
             for child in root_node.children:
                 temp, states = DFG_python(child, index_to_code, states)
                 DFG += temp
@@ -167,6 +165,7 @@ def DFG_python(root_node, index_to_code, states):
         return sorted(DFG, key=lambda x: x[1]), states
     else:
         DFG = []
+        do_first_statement = ['for_in_clause']
         for child in root_node.children:
             if child.type in do_first_statement:
                 temp, states = DFG_python(child, index_to_code, states)
@@ -187,7 +186,6 @@ def DFG_java(root_node, index_to_code, states):
     for_statement = ['for_statement']
     enhanced_for_statement = ['enhanced_for_statement']
     while_statement = ['while_statement']
-    do_first_statement = []
     states = states.copy()
     if (len(root_node.children) == 0 or root_node.type == 'string') and root_node.type != 'comment':
         idx, code = index_to_code[(root_node.start_point, root_node.end_point)]
@@ -209,7 +207,6 @@ def DFG_java(root_node, index_to_code, states):
                 idx, code = index_to_code[index]
                 DFG.append((code, idx, 'comesFrom', [], []))
                 states[code] = [idx]
-            return sorted(DFG, key=lambda x: x[1]), states
         else:
             name_indexs = tree_to_variable_index(name, index_to_code)
             value_indexs = tree_to_variable_index(value, index_to_code)
@@ -221,7 +218,7 @@ def DFG_java(root_node, index_to_code, states):
                     idx2, code2 = index_to_code[index2]
                     DFG.append((code1, idx1, 'comesFrom', [code2], [idx2]))
                 states[code1] = [idx1]
-            return sorted(DFG, key=lambda x: x[1]), states
+        return sorted(DFG, key=lambda x: x[1]), states
     elif root_node.type in assignment:
         left_nodes = root_node.child_by_field_name('left')
         right_nodes = root_node.child_by_field_name('right')
@@ -304,7 +301,7 @@ def DFG_java(root_node, index_to_code, states):
         value = root_node.child_by_field_name('value')
         body = root_node.child_by_field_name('body')
         DFG = []
-        for i in range(2):
+        for _ in range(2):
             temp, states = DFG_java(value, index_to_code, states)
             DFG += temp
             name_indexs = tree_to_variable_index(name, index_to_code)
@@ -328,7 +325,7 @@ def DFG_java(root_node, index_to_code, states):
         return sorted(DFG, key=lambda x: x[1]), states
     elif root_node.type in while_statement:
         DFG = []
-        for i in range(2):
+        for _ in range(2):
             for child in root_node.children:
                 temp, states = DFG_java(child, index_to_code, states)
                 DFG += temp
@@ -343,6 +340,7 @@ def DFG_java(root_node, index_to_code, states):
         return sorted(DFG, key=lambda x: x[1]), states
     else:
         DFG = []
+        do_first_statement = []
         for child in root_node.children:
             if child.type in do_first_statement:
                 temp, states = DFG_java(child, index_to_code, states)

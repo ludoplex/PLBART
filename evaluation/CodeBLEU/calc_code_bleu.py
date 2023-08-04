@@ -30,7 +30,7 @@ def compute_codebleu(hypothesis, references, lang, params='0.25,0.25,0.25,0.25')
     ngram_match_score = bleu.corpus_bleu(tokenized_refs, tokenized_hyps)
 
     # calculate weighted ngram match
-    kw_file = root_directory.joinpath("evaluation/CodeBLEU/keywords/{}.txt".format(lang))
+    kw_file = root_directory.joinpath(f"evaluation/CodeBLEU/keywords/{lang}.txt")
     keywords = [x.strip() for x in open(kw_file, 'r', encoding='utf-8').readlines()]
 
     tokenized_refs_with_weights = \
@@ -81,18 +81,18 @@ def main():
     # List(String)
     hypothesis = [x.strip() for x in open(args.hyp, 'r', encoding='utf-8').readlines()]
 
-    for i in range(len(pre_references)):
-        assert len(hypothesis) == len(pre_references[i])
+    for pre_reference in pre_references:
+        assert len(hypothesis) == len(pre_reference)
 
     references = []
     for i in range(len(hypothesis)):
         ref_for_instance = []
-        for j in range(len(pre_references)):
+        for pre_reference_ in pre_references:
             if args.json_refs:
-                _ref = json.loads(pre_references[j][i])
+                _ref = json.loads(pre_reference_[i])
                 ref_for_instance.append(_ref['code'])
             else:
-                ref_for_instance.append(pre_references[j][i])
+                ref_for_instance.append(pre_reference_[i])
         references.append(ref_for_instance)
 
     assert len(references) == len(pre_references) * len(hypothesis)

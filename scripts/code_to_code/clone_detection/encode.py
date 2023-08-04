@@ -54,7 +54,7 @@ def preprocess(spmfile, srcfile, tgtfile, workers=20):
 
     processed_dataset = {}
     with tqdm(total=len(dataset), desc='Processing') as pbar:
-        for i, ex in enumerate(pool.imap(encoder.encode, dataset, 100)):
+        for ex in pool.imap(encoder.encode, dataset, 100):
             pbar.update()
             processed_dataset[ex['idx']] = ex['code']
 
@@ -73,8 +73,7 @@ def postprocess(srcfile, index_file, outdir, split, nexample=-1, max_length=510)
 
     line_count = count_file_lines(index_file)
     line_count = line_count if nexample == -1 else min(line_count, nexample)
-    with open(os.path.join(outdir, '{}.input0'.format(split)), 'w', encoding='utf-8') as fw1, \
-            open(os.path.join(outdir, '{}.label'.format(split)), 'w', encoding='utf-8') as fw2:
+    with (open(os.path.join(outdir, f'{split}.input0'), 'w', encoding='utf-8') as fw1, open(os.path.join(outdir, f'{split}.label'), 'w', encoding='utf-8') as fw2):
         with open(index_file, encoding='utf8') as f:
             for idx, line in enumerate(tqdm(f, total=line_count)):
                 splits = line.strip().split('\t')

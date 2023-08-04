@@ -91,7 +91,7 @@ class CodeCompletionTask(FairseqTask):
 
         self.langs = args.langs.split(",")
         for l in self.langs:
-            self.dictionary.add_symbol("[{}]".format(l))
+            self.dictionary.add_symbol(f"[{l}]")
         self.dictionary.add_symbol("<mask>")
 
         self.SHOW_SAMPLES_INTERVAL = args.show_samples_interval
@@ -110,7 +110,7 @@ class CodeCompletionTask(FairseqTask):
         paths = utils.split_paths(args.data)
         assert len(paths) > 0
         dictionary = cls.load_dictionary(os.path.join(paths[0], "dict.txt"))
-        logger.info('dictionary: {} types'.format(len(dictionary)))
+        logger.info(f'dictionary: {len(dictionary)} types')
         return cls(args, dictionary)
 
     def load_dataset(self, split, epoch=1, combine=False, **kwargs):
@@ -130,7 +130,7 @@ class CodeCompletionTask(FairseqTask):
             combine=combine,
         )
         if dataset is None:
-            raise FileNotFoundError('Dataset not found: {} ({})'.format(split, split_path))
+            raise FileNotFoundError(f'Dataset not found: {split} ({split_path})')
 
         dataset = CodeCompletionDataset(
             dataset,
@@ -232,8 +232,8 @@ class CodeCompletionTask(FairseqTask):
             # summed efficiently across workers using fast-stat-sync
             assert len(bleu.counts) == EVAL_BLEU_ORDER
             for i in range(EVAL_BLEU_ORDER):
-                logging_output['_bleu_counts_' + str(i)] = bleu.counts[i]
-                logging_output['_bleu_totals_' + str(i)] = bleu.totals[i]
+                logging_output[f'_bleu_counts_{str(i)}'] = bleu.counts[i]
+                logging_output[f'_bleu_totals_{str(i)}'] = bleu.totals[i]
         return loss, sample_size, logging_output
 
     def inference_step(self, generator, models, sample, prefix_tokens=None):
@@ -252,8 +252,8 @@ class CodeCompletionTask(FairseqTask):
 
             counts, totals = [], []
             for i in range(EVAL_BLEU_ORDER):
-                counts.append(sum_logs('_bleu_counts_' + str(i)))
-                totals.append(sum_logs('_bleu_totals_' + str(i)))
+                counts.append(sum_logs(f'_bleu_counts_{str(i)}'))
+                totals.append(sum_logs(f'_bleu_totals_{str(i)}'))
 
             if max(totals) > 0:
                 # log counts as numpy arrays -- log_scalar will sum them correctly

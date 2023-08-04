@@ -56,7 +56,7 @@ def encode(
     tokens = model.bpe.encode(sentence)
     if len(tokens.split(" ")) > model.max_positions - 1:
         tokens = " ".join(tokens.split(" ")[: model.max_positions - 1])
-    bpe_sentence = tokens + " </s>"
+    bpe_sentence = f"{tokens} </s>"
     tokens = model.task.source_dictionary.encode_line(
         bpe_sentence, append_eos=False, add_if_not_exist=False
     )
@@ -104,22 +104,21 @@ def generate(
 
     if verbose:
         src_str_with_unk = model.string(tokens)
-        logger.info("S\t{}".format(src_str_with_unk))
+        logger.info(f"S\t{src_str_with_unk}")
 
     hypos = [v for _, v in sorted(zip(sample["id"].tolist(), translations))]
-    if use_mean_logp:
-        scorer = SequenceScorer(model.task.target_dictionary)
-        batch_hypotheses = []
-        for (src_tokens, hypotheses) in zip(tokens, hypos):
-            num_hypotheses = len(hypotheses)
-            tgt_tokens = [x["tokens"].cpu() for x in hypotheses]
-            sample = build_sample(model, [src_tokens] * num_hypotheses, tgt_tokens)
-            scored_hypos = scorer.generate([model.model], sample)
-            hyp_scores = [x[0]["score"].item() for x in scored_hypos]
-            batch_hypotheses.append([hypotheses[idx] for idx in np.argsort(hyp_scores)])
-        return batch_hypotheses
-    else:
+    if not use_mean_logp:
         return hypos
+    scorer = SequenceScorer(model.task.target_dictionary)
+    batch_hypotheses = []
+    for (src_tokens, hypotheses) in zip(tokens, hypos):
+        num_hypotheses = len(hypotheses)
+        tgt_tokens = [x["tokens"].cpu() for x in hypotheses]
+        sample = build_sample(model, [src_tokens] * num_hypotheses, tgt_tokens)
+        scored_hypos = scorer.generate([model.model], sample)
+        hyp_scores = [x[0]["score"].item() for x in scored_hypos]
+        batch_hypotheses.append([hypotheses[idx] for idx in np.argsort(hyp_scores)])
+    return batch_hypotheses
 
 
 def sample(
@@ -155,10 +154,10 @@ def process_completion(
         prompt = detokenize_python(tokenized_prompt)
         completion = function.replace(prompt, '')
         if not tokenized_completion.startswith("INDENT "):
-            completion = "    " + completion
+            completion = f"    {completion}"
     else:
         if not tokenized_completion.startswith("INDENT "):
-            tokenized_completion = "INDENT " + tokenized_completion
+            tokenized_completion = f"INDENT {tokenized_completion}"
         completion = detokenize_python(tokenized_completion)
     return function, completion
 

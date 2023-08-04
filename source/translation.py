@@ -20,5 +20,5 @@ class TranslationPLBARTTask(TranslationTask):
         self.langs = args.langs.split(",")
         for d in [self.src_dict, self.tgt_dict]:
             for l in self.langs:
-                d.add_symbol("[{}]".format(l))
+                d.add_symbol(f"[{l}]")
             d.add_symbol("<mask>")

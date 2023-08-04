@@ -20,15 +20,12 @@ class SplitFunction(object):
         self.tokenizer.Load(spm_model.absolute().as_posix())
 
     def _decode(self, tokens):
-        s = self.tokenizer.decode(
-            [self.dictionary[t] for t in tokens]
-        )
-        return s  # a string
+        return self.tokenizer.decode([self.dictionary[t] for t in tokens])
 
     def _encode(self, text):
         tokens = self.tokenizer.encode(text, out_type=str)
         ids = []
-        for i, token in enumerate(tokens):
+        for token in tokens:
             idx = self.dictionary.index(token)
             ids.append(idx)
         return ids
@@ -121,37 +118,31 @@ class SplitFunction(object):
 
 
 def get_signature(function):
-    # e.g.,
-    # def interpolate_loc ( grid , loc ) : NEW_LINE INDENT
-    sig = re.findall(
+    return re.findall(
         "[d][e][f][ ].*?[ ][(].*?[)][ ]"
         "[:][ ][N][E][W][_][L][I][N][E][ ][I][N][D][E][N][T]",
-        function, re.DOTALL
+        function,
+        re.DOTALL,
     )
-    return sig
 
 
 def get_docstrings(function):
-    # e.g.,
-    # : NEW_LINE INDENT """ Helper which interpolates between two locs . """ NEW_LINE
-    ds = re.findall(
+    return re.findall(
         "[:][ ][N][E][W][_][L][I][N][E][ ][I][N][D][E][N][T][ ]['][']['].*?['][']['][ ][N][E][W][_][L][I][N][E]"
         "|"
         "[:][ ][N][E][W][_][L][I][N][E][ ][I][N][D][E][N][T][ ][\"][\"][\"].*?[\"][\"][\"][ ][N][E][W][_][L][I][N][E]",
-        function, re.DOTALL
+        function,
+        re.DOTALL,
     )
-    return ds
 
 
 def get_signature_and_docstrings(function):
-    # e.g.,
-    # def interpolate_loc ( grid , loc ) : NEW_LINE INDENT """ Helper which interpolates between two locs . """ NEW_LINE
-    sds = re.findall(
+    return re.findall(
         "[d][e][f][ ].*?[ ][(].*?[)][ ]"
         "[:][ ][N][E][W][_][L][I][N][E][ ][I][N][D][E][N][T][ ]['][']['].*?['][']['][ ][N][E][W][_][L][I][N][E]"
         "|"
         "[d][e][f][ ].*?[ ][(].*?[)][ ]"
         "[:][ ][N][E][W][_][L][I][N][E][ ][I][N][D][E][N][T][ ][\"][\"][\"].*?[\"][\"][\"][ ][N][E][W][_][L][I][N][E]",
-        function, re.DOTALL
+        function,
+        re.DOTALL,
     )
-    return sds

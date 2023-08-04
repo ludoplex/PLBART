@@ -13,7 +13,7 @@ def encode(model, sentence, max_positions=512):
     tokens = sentence
     if len(tokens.split(" ")) > max_positions - 2:
         tokens = " ".join(tokens.split(" ")[: max_positions - 2])
-    bpe_sentence = "<s> " + tokens + " </s>"
+    bpe_sentence = f"<s> {tokens} </s>"
     tokens = model.task.source_dictionary.encode_line(
         bpe_sentence, add_if_not_exist=False, append_eos=False
     )
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     bart.eval()
     ncorrect, nsamples = 0.0, 0.0
     y_true, y_pred = [], []
-    with open(args.input_file) as inpf, open(args.label_file) as labelf, open(args.output, 'w') as outp:
+    with (open(args.input_file) as inpf, open(args.label_file) as labelf, open(args.output, 'w') as outp):
         inputs = inpf.readlines()
         labels = labelf.readlines()
         if args.max_example != -1 and args.max_example > 0:
@@ -81,16 +81,16 @@ if __name__ == '__main__':
                 prediction = prediction.argmax(dim=1).cpu().numpy().tolist()
                 prediction = [int(label_fn(p)) for p in prediction]
                 y_pred.extend(prediction)
-                ncorrect += sum([int(p == t) for p, t in zip(prediction, batch_targets)])
+                ncorrect += sum(int(p == t) for p, t in zip(prediction, batch_targets))
                 nsamples += len(prediction)
-                log = ['{}\t{}'.format(p, t) for p, t in zip(prediction, batch_targets)]
-                # outp.write('\n'.join(log) + '\n')
+                log = [f'{p}\t{t}' for p, t in zip(prediction, batch_targets)]
+                            # outp.write('\n'.join(log) + '\n')
 
         assert len(inputs) == nsamples
 
         acc = round(100.0 * ncorrect / nsamples, 3)
         print('Accuracy: ', acc)
-        outp.write('Accuracy: ' + str(acc) + '\n')
+        outp.write(f'Accuracy: {str(acc)}' + '\n')
         target_names = ['0', '1']
         report = classification_report(y_true, y_pred, target_names=target_names, digits=3)
         print(report)

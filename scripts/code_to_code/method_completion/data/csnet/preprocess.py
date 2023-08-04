@@ -24,28 +24,24 @@ def process_bimodal_instance(ex):
 def prepare(args):
     pool = Pool(min(cpu_count(), args.workers))
     src_dir = os.path.join(args.source_dir)
-    writer = open(
-        '{}/{}.functions.tok'.format(args.target_dir, args.split), 'w', encoding='utf-8'
-    )
-    for file in glob.glob("{}/python_{}_*.jsonl".format(src_dir, args.split)):
-        filename, _ = os.path.splitext(os.path.basename(file))
-        with open(file) as f:
-            data = [json.loads(line.strip()) for line in f]
+    with open(f'{args.target_dir}/{args.split}.functions.tok', 'w', encoding='utf-8') as writer:
+        for file in glob.glob(f"{src_dir}/python_{args.split}_*.jsonl"):
+            filename, _ = os.path.splitext(os.path.basename(file))
+            with open(file) as f:
+                data = [json.loads(line.strip()) for line in f]
 
-        results = []
-        with tqdm(total=len(data), desc="{}".format(filename)) as pbar:
-            for i, out in enumerate(pool.imap(process_bimodal_instance, data, 1000)):
-                pbar.update()
-                results.append(out)
+            results = []
+            with tqdm(total=len(data), desc=f"{filename}") as pbar:
+                for out in pool.imap(process_bimodal_instance, data, 1000):
+                    pbar.update()
+                    results.append(out)
 
-        for tokenized_code in results:
-            if tokenized_code:
-                try:
-                    writer.write(tokenized_code + '\n')
-                except:
-                    pass
-
-    writer.close()
+            for tokenized_code in results:
+                if tokenized_code:
+                    try:
+                        writer.write(tokenized_code + '\n')
+                    except:
+                        pass
 
 
 if __name__ == '__main__':

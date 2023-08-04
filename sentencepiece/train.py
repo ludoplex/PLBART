@@ -9,39 +9,41 @@ def main(args):
 
     num_split = 4
     for i in range(num_split):
-        FILES.append('{}/java/train.{}.functions_class.tok'.format(GITHUB_DIR, i))
-        FILES.append('{}/java/train.{}.functions_standalone.tok'.format(GITHUB_DIR, i))
-        FILES.append('{}/python/train.{}.functions_class.tok'.format(GITHUB_DIR, i))
-        FILES.append('{}/python/train.{}.functions_standalone.tok'.format(GITHUB_DIR, i))
-
+        FILES.extend(
+            (
+                f'{GITHUB_DIR}/java/train.{i}.functions_class.tok',
+                f'{GITHUB_DIR}/java/train.{i}.functions_standalone.tok',
+                f'{GITHUB_DIR}/python/train.{i}.functions_class.tok',
+                f'{GITHUB_DIR}/python/train.{i}.functions_standalone.tok',
+            )
+        )
     FILES += [
-        '{}/java/valid.functions_class.tok'.format(GITHUB_DIR),
-        '{}/java/valid.functions_standalone.tok'.format(GITHUB_DIR),
-        '{}/java/test.functions_class.tok'.format(GITHUB_DIR),
-        '{}/java/test.functions_standalone.tok'.format(GITHUB_DIR),
-        '{}/python/valid.functions_class.tok'.format(GITHUB_DIR),
-        '{}/python/valid.functions_standalone.tok'.format(GITHUB_DIR),
-        '{}/python/test.functions_class.tok'.format(GITHUB_DIR),
-        '{}/python/test.functions_standalone.tok'.format(GITHUB_DIR),
+        f'{GITHUB_DIR}/java/valid.functions_class.tok',
+        f'{GITHUB_DIR}/java/valid.functions_standalone.tok',
+        f'{GITHUB_DIR}/java/test.functions_class.tok',
+        f'{GITHUB_DIR}/java/test.functions_standalone.tok',
+        f'{GITHUB_DIR}/python/valid.functions_class.tok',
+        f'{GITHUB_DIR}/python/valid.functions_standalone.tok',
+        f'{GITHUB_DIR}/python/test.functions_class.tok',
+        f'{GITHUB_DIR}/python/test.functions_standalone.tok',
     ]
 
     FILES += [
-        '{}/train.0.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/train.1.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/train.2.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/train.3.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/train.4.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/train.5.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/train.6.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/train.7.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/valid.description.txt'.format(STACKOVERFLOW_DIR),
-        '{}/test.description.txt'.format(STACKOVERFLOW_DIR)
+        f'{STACKOVERFLOW_DIR}/train.0.description.txt',
+        f'{STACKOVERFLOW_DIR}/train.1.description.txt',
+        f'{STACKOVERFLOW_DIR}/train.2.description.txt',
+        f'{STACKOVERFLOW_DIR}/train.3.description.txt',
+        f'{STACKOVERFLOW_DIR}/train.4.description.txt',
+        f'{STACKOVERFLOW_DIR}/train.5.description.txt',
+        f'{STACKOVERFLOW_DIR}/train.6.description.txt',
+        f'{STACKOVERFLOW_DIR}/train.7.description.txt',
+        f'{STACKOVERFLOW_DIR}/valid.description.txt',
+        f'{STACKOVERFLOW_DIR}/test.description.txt',
     ]
 
     # we may consider adding --user_defined_symbols=INDENT,DEDENT,NEW_LINE
     spm.SentencePieceTrainer.train(
-        '--input={} --vocab_size=50000 --model_prefix=sentencepiece.bpe '
-        '--character_coverage=1.0 --model_type=bpe'.format(','.join(FILES))
+        f"--input={','.join(FILES)} --vocab_size=50000 --model_prefix=sentencepiece.bpe --character_coverage=1.0 --model_type=bpe"
     )
 
 

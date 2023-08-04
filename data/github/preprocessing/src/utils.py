@@ -61,14 +61,10 @@ def output_all_tokenized_results(docs, f_tok):
     #             f_tok.write('\n')
     #         except:
     #             continue
-    with Pool(cpu_count()) as pool, tqdm.tqdm(total=len(docs)) as pbar:
-        for i, (content_tokenized, path) in enumerate(
-                pool.imap_unordered(tokenize_json_helper, docs)
-        ):
+    with (Pool(cpu_count()) as pool, tqdm.tqdm(total=len(docs)) as pbar):
+        for content_tokenized, path in pool.imap_unordered(tokenize_json_helper, docs):
             pbar.update()
-            if len(content_tokenized) == 0:
-                continue
-            else:
+            if len(content_tokenized) != 0:
                 content_tokenized = ' '.join(content_tokenized)
                 s = f"<DOCUMENT_ID=\"{path}\"> {content_tokenized} </DOCUMENT>"
                 # for some reason sometimes, some caracters of s
@@ -82,7 +78,7 @@ def output_all_tokenized_results(docs, f_tok):
 
 def process_and_tokenize_json_file(input_path, language, keep_comments):
     suffix = '.with_comments' if keep_comments else ''
-    output_path = str(input_path).replace('.json.gz', suffix + '.tok')
+    output_path = str(input_path).replace('.json.gz', f'{suffix}.tok')
     tokenizer = getattr(code_tokenizer, f"tokenize_{language}")
     docs = []
     paths = []
@@ -168,7 +164,7 @@ def get_nlines(file_path):
 def head(file_path, n):
     n = int(n)
     with file_path.open('r', encoding='utf-8') as f:
-        h = [next(f) for i in range(n)]
+        h = [next(f) for _ in range(n)]
     return h
 
 
@@ -178,7 +174,7 @@ def truncate_files(file_paths):
         with f.open('r', encoding='utf-8') as f:
             lines = f.readlines()
             all_lines.append(lines)
-    mini = min([len(lines) for lines in all_lines])
+    mini = min(len(lines) for lines in all_lines)
     for f, i in enumerate(file_paths):
         if len(all_lines[i]) > mini:
             with f.open('w', encoding='utf-8') as f:
@@ -189,7 +185,7 @@ def truncate_files(file_paths):
 def write_head(file_path, n):
     n = int(n)
     with file_path.open('r', encoding='utf-8') as f:
-        h = [next(f) for i in range(n)]
+        h = [next(f) for _ in range(n)]
     with file_path.open('w', encoding='utf-8') as f:
         f.write(''.join(h))
     return h
@@ -260,7 +256,7 @@ def regroup_and_select_data(files, output, nlines=None):
 
     assert nlines is None or len(files) == len(nlines)
     if nlines is None:
-        nlines = [float('Inf') for i in range(len(files))]
+        nlines = [float('Inf') for _ in range(len(files))]
 
     for files_, nlines_ in zip(files, nlines):
         missing_lines = nlines_

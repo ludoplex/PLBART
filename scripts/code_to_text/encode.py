@@ -29,8 +29,6 @@ def python_code_tokenize(full_code_text):
         for x in g:
             if x.type == tokenize.ENDMARKER:  # End Marker
                 continue
-            # if x.type == tokenize.COMMENT:
-            #     continue
             elif x.type == tokenize.NEWLINE:
                 tokens.append('NEW_LINE')
             elif x.type == tokenize.INDENT:
@@ -40,11 +38,14 @@ def python_code_tokenize(full_code_text):
             elif x.type == tokenize.STRING:  # String
                 s = x.string.strip()
                 if s.startswith('"""') or s.startswith("'''"):
-                    if prev_token is not None and (prev_token == '=' or prev_token == '(' or prev_token == ','):
+                    if prev_token is not None and prev_token in [
+                        '=',
+                        '(',
+                        ',',
+                    ]:
                         tokens.append(x.string)
                     continue
                 tokens.append(x.string)
-                pass
             elif x.string == '\n':
                 continue
             elif x.type < 57:
@@ -52,7 +53,6 @@ def python_code_tokenize(full_code_text):
             prev_token = x.string.strip()
     except:
         return []
-        pass
     return tokens
 
 
@@ -94,13 +94,9 @@ def load_data(input_file, src_field, tgt_field, src_lang):
             src = ex[src_field]
             if isinstance(src, list):
                 src = " ".join(src)
-            else:
-                if src_lang == 'python':
-                    tokens = python_code_tokenize(src)
-                    if len(tokens) > 0:
-                        src = " ".join(tokens)
-                    else:
-                        src = " ".join(ex['code_tokens'])
+            elif src_lang == 'python':
+                tokens = python_code_tokenize(src)
+                src = " ".join(tokens) if len(tokens) > 0 else " ".join(ex['code_tokens'])
             src = src.replace('\n', ' ').strip()
             tgt = ex[tgt_field]
             if isinstance(tgt, list):
@@ -119,12 +115,12 @@ def process(args):
 
     processed_dataset = []
     with tqdm(total=len(dataset), desc='Processing') as pbar:
-        for i, ex in enumerate(pool.imap(encoder.encode, dataset, 100)):
+        for ex in pool.imap(encoder.encode, dataset, 100):
             pbar.update()
             processed_dataset.append(ex)
 
-    out_src = os.path.join(args.output_dir, '{}.spm.{}'.format(args.pref, args.src_lang))
-    out_tgt = os.path.join(args.output_dir, '{}.spm.{}'.format(args.pref, args.tgt_lang))
+    out_src = os.path.join(args.output_dir, f'{args.pref}.spm.{args.src_lang}')
+    out_tgt = os.path.join(args.output_dir, f'{args.pref}.spm.{args.tgt_lang}')
     with open(out_src, 'w', encoding='utf-8') as src_writer, \
             open(out_tgt, 'w', encoding='utf-8') as tgt_writer:
         for ex in processed_dataset:

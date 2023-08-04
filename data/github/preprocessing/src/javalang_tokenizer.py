@@ -30,7 +30,7 @@ class JavaToken(object):
                 self.__class__.__name__, self.value, self.position[0], self.position[1]
             )
         else:
-            return '%s "%s"' % (self.__class__.__name__, self.value)
+            return f'{self.__class__.__name__} "{self.value}"'
 
     def __str__(self):
         return repr(self)
@@ -43,27 +43,89 @@ class EndOfInput(JavaToken):
     pass
 
 
+
+
 class Keyword(JavaToken):
-    VALUES = set(['abstract', 'assert', 'boolean', 'break', 'byte', 'case',
-                  'catch', 'char', 'class', 'const', 'continue', 'default',
-                  'do', 'double', 'else', 'enum', 'extends', 'final',
-                  'finally', 'float', 'for', 'goto', 'if', 'implements',
-                  'import', 'instanceof', 'int', 'interface', 'long', 'native',
-                  'new', 'package', 'private', 'protected', 'public', 'return',
-                  'short', 'static', 'strictfp', 'super', 'switch',
-                  'synchronized', 'this', 'throw', 'throws', 'transient', 'try',
-                  'void', 'volatile', 'while'])
+    VALUES = {
+        'abstract',
+        'assert',
+        'boolean',
+        'break',
+        'byte',
+        'case',
+        'catch',
+        'char',
+        'class',
+        'const',
+        'continue',
+        'default',
+        'do',
+        'double',
+        'else',
+        'enum',
+        'extends',
+        'final',
+        'finally',
+        'float',
+        'for',
+        'goto',
+        'if',
+        'implements',
+        'import',
+        'instanceof',
+        'int',
+        'interface',
+        'long',
+        'native',
+        'new',
+        'package',
+        'private',
+        'protected',
+        'public',
+        'return',
+        'short',
+        'static',
+        'strictfp',
+        'super',
+        'switch',
+        'synchronized',
+        'this',
+        'throw',
+        'throws',
+        'transient',
+        'try',
+        'void',
+        'volatile',
+        'while',
+    }
+
+
+
 
 
 class Modifier(Keyword):
-    VALUES = set(['abstract', 'default', 'final', 'native', 'private',
-                  'protected', 'public', 'static', 'strictfp', 'synchronized',
-                  'transient', 'volatile'])
+    VALUES = {
+        'abstract',
+        'default',
+        'final',
+        'native',
+        'private',
+        'protected',
+        'public',
+        'static',
+        'strictfp',
+        'synchronized',
+        'transient',
+        'volatile',
+    }
+
+
+
 
 
 class BasicType(Keyword):
-    VALUES = set(['boolean', 'byte', 'char', 'double',
-                  'float', 'int', 'long', 'short'])
+    VALUES = {'boolean', 'byte', 'char', 'double', 'float', 'int', 'long', 'short'}
+
 
 
 class Literal(JavaToken):
@@ -102,8 +164,11 @@ class HexFloatingPoint(FloatingPoint):
     pass
 
 
+
+
 class Boolean(Literal):
-    VALUES = set(["true", "false"])
+    VALUES = {"true", "false"}
+
 
 
 class Character(Literal):
@@ -118,8 +183,10 @@ class Null(Literal):
     pass
 
 
+
+
 class Separator(JavaToken):
-    VALUES = set(['(', ')', '{', '}', '[', ']', ';', ',', '.'])
+    VALUES = {'(', ')', '{', '}', '[', ']', ';', ',', '.'}
 
 
 class Operator(JavaToken):
@@ -190,7 +257,7 @@ class JavaTokenizer(object):
         self.current_line = 1
         self.start_of_line = -1
 
-        self.operators = [set() for i in range(0, Operator.MAX_LEN)]
+        self.operators = [set() for _ in range(0, Operator.MAX_LEN)]
 
         for v in Operator.VALUES:
             self.operators[len(v) - 1].add(v)
@@ -460,7 +527,7 @@ class JavaTokenizer(object):
         return token_type
 
     def pre_tokenize(self):
-        new_data = list()
+        new_data = []
         data = self.decode_data()
 
         i = 0
@@ -544,8 +611,7 @@ class JavaTokenizer(object):
                     self.javadoc = comment
                 if keep_comments:
                     token_type = Comment
-                    token = token_type(comment)
-                    yield token
+                    yield token_type(comment)
                 continue
 
             elif startswith == '..' and self.try_operator():
@@ -584,10 +650,7 @@ class JavaTokenizer(object):
                 continue
 
             position = Position(self.current_line, self.i - self.start_of_line)
-            token = token_type(
-                self.data[self.i:self.j], position, self.javadoc)
-            yield token
-
+            yield token_type(self.data[self.i : self.j], position, self.javadoc)
             if self.javadoc:
                 self.javadoc = None
 
@@ -604,8 +667,7 @@ class JavaTokenizer(object):
         if not char:
             char = self.data[self.j]
 
-        message = u'%s at "%s", line %s: %s' % (
-            message, char, line_number, line)
+        message = f'{message} at "{char}", line {line_number}: {line}'
         error = LexerError(message)
         self.errors.append(error)
 
@@ -623,26 +685,19 @@ def reformat_tokens(tokens):
     closed_block = False
     ident_last = False
 
-    output = list()
+    output = []
 
     for token in tokens:
         if closed_block:
             closed_block = False
             indent -= 4
 
-            output.append('\n')
-            output.append(' ' * indent)
-            output.append('}')
-
+            output.extend(('\n', ' ' * indent, '}'))
             if isinstance(token, (Literal, Keyword, Identifier)):
-                output.append('\n')
-                output.append(' ' * indent)
-
+                output.extend(('\n', ' ' * indent))
         if token.value == '{':
             indent += 4
-            output.append(' {\n')
-            output.append(' ' * indent)
-
+            output.extend((' {\n', ' ' * indent))
         elif token.value == '}':
             closed_block = True
 
@@ -657,12 +712,10 @@ def reformat_tokens(tokens):
             output.append(token.value)
 
         elif isinstance(token, Operator):
-            output.append(' ' + token.value + ' ')
+            output.append(f' {token.value} ')
 
         elif token.value == ';':
-            output.append(';\n')
-            output.append(' ' * indent)
-
+            output.extend((';\n', ' ' * indent))
         else:
             output.append(token.value)
 

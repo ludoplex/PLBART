@@ -46,11 +46,11 @@ class MultiprocessingEncoder(object):
 
 def load_data(src_file, tgt_file):
     data = []
-    with open(src_file, 'r', encoding='utf-8') as f1, \
-            open(tgt_file, 'r', encoding='utf-8') as f2:
-        for src, tgt in zip(f1, f2):
-            data.append({'src': src.strip(), 'tgt': tgt.strip()})
-
+    with (open(src_file, 'r', encoding='utf-8') as f1, open(tgt_file, 'r', encoding='utf-8') as f2):
+        data.extend(
+            {'src': src.strip(), 'tgt': tgt.strip()}
+            for src, tgt in zip(f1, f2)
+        )
     return data
 
 
@@ -62,12 +62,12 @@ def process(args):
 
     processed_dataset = []
     with tqdm(total=len(dataset), desc='Processing') as pbar:
-        for i, ex in enumerate(pool.imap(encoder.encode, dataset, 100)):
+        for ex in pool.imap(encoder.encode, dataset, 100):
             pbar.update()
             processed_dataset.append(ex)
 
-    out_src = os.path.join(args.output_dir, '{}.spm.{}'.format(args.pref, args.src_lang))
-    out_tgt = os.path.join(args.output_dir, '{}.spm.{}'.format(args.pref, args.tgt_lang))
+    out_src = os.path.join(args.output_dir, f'{args.pref}.spm.{args.src_lang}')
+    out_tgt = os.path.join(args.output_dir, f'{args.pref}.spm.{args.tgt_lang}')
     with open(out_src, 'w', encoding='utf-8') as src_writer, \
             open(out_tgt, 'w', encoding='utf-8') as tgt_writer:
         for ex in processed_dataset:

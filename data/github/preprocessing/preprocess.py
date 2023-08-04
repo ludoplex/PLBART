@@ -36,7 +36,7 @@ def check_files_and_symlink_for_XLM(dataset, langs):
                 f"{lang}.test{dataset.suffix}{cat}.bpe.pth").is_file()
             assert dataset.folder.joinpath(
                 f"{lang}.valid{dataset.suffix}{cat}.bpe.pth").is_file()
-    XLM_folder = Path(str(dataset.folder) + '.XLM-syml')
+    XLM_folder = Path(f'{str(dataset.folder)}.XLM-syml')
     XLM_folder.mkdir(exist_ok=True)
     print("create symlinks for XLM ...")
     for lang in langs:
